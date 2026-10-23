@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OTC Candle Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: white;
+      text-align: center;
+      padding: 24px;
+    }
+    main {
+      max-width: 500px;
+      margin: 35px auto;
+      padding: 22px;
+      background: #1e293b;
+      border-radius: 16px;
+    }
+    button {
+      padding: 13px 22px;
+      border: 0;
+      border-radius: 8px;
+      background: #22c55e;
+      color: #07130b;
+      font-weight: bold;
+    }
+    #result { margin-top: 22px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h2>OTC Candle Analyzer</h2>
+    <p>1-Minute Candle Data</p>
+    <button onclick="analyze()">Analyze Candles</button>
+    <div id="result">বিশ্লেষণের জন্য বাটনে চাপ দিন।</div>
+  </main>
+  <script>
+    async function analyze() {
+      const result = document.getElementById("result");
+      result.textContent = "Candle data লোড হচ্ছে...";
+      try {
+        const response = await fetch("/.netlify/functions/candles");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "API error");
+        const candles = data.candles;
+        if (!Array.isArray(candles) || candles.length < 2) {
+          throw new Error("API candle data পাওয়া যায়নি।");
+        }
+        const last = candles[candles.length - 1];
+        const previous = candles[candles.length - 2];
+        if (last.close > last.open && previous.close > previous.open) {
+          result.textContent = "শেষ দুইটি candle bullish। এটি নিশ্চিত Buy signal নয়।";
+        } else if (last.close < last.open && previous.close < previous.open) {
+          result.textContent = "শেষ দুইটি candle bearish। এটি নিশ্চিত Sell signal নয়।";
+        } else {
+          result.textContent = "মিশ্র candle: পরিষ্কার দিক পাওয়া যায়নি।";
+        }
+      } catch (e) {
+        result.textContent = "ডেটা পাওয়া যায়নি: " + e.message;
+      }
+    }
+  </script>
+</body>
+</html>
